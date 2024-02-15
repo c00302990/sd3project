@@ -1,0 +1,13 @@
+/ELT-Instructor/.vscode
+/ELT-Instructor/assets
+/ELT-Instructor/node_modules/
+/ELT-Instructor/.eslintrc.json
+/ELT-Instructor/babel.config.json
+/ELT-Instructor/manifest.xml
+/ELT-Instructor/package.json
+/ELT-Instructor/package-lock.json
+/ELT-Instructor/webpack.config.js
+
+/web_application/node_modules/
+/web_application/package.json
+/web_application/package-lock.json
