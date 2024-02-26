@@ -1,54 +1,74 @@
-const express = require('express')
-const app = express()
+var express = require('express');
+var app = express();
 
-app.get('/', (req, res) => res.send("Hello World!"))
-app.listen(3000, ()=>console.log('Express app listening on port 3000!'))
+var cors = require('cors');
+app.use(cors());
 
-/*var http = require('http');
-var fs = require('fs');
-var url = require('url');
+const maria = require('./database/connect/maria');
+maria.connect();
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({extended:false}));
 
-var qs = require('querystring');
+const helmet = require('helmet');
+app.use(helmet());
 
-var app = http.createServer(function(request,response){
-	var _url = request.url;
-	var queryData = url.parse(_url, true).query;
-	var pathname = url.parse(_url, true).pathname;
+app.get('/', function (req, res) {
+	var template = `
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<title>Welcome!</title>
+		</head>
 	
-	if(pathname === '/'){
-		var template = `
-			<!DOCTYPE html>
-			<html>
-				<head>
-					<title></title>
-				</head>
-		
-				<body>
-					TEST!
-					<div></div>
-				</body>
-			</html>
-		`
-
-		response.writeHead(200);
-		response.end(template);
-	} else {
-		response.writeHead(404);
-		response.end('Not found');
-	}
-
-	
-	var body = '';
-	request.on('data', function(data){
-		body = body + data;
-	});
-
-	request.on('end', function(){
-		var post = qs.parse(body);
-		console.log(post);
-		//console.log(post['arrayData[]']);
-	});
-
+		<body>
+			<form action="" method="post">
+				<p><input type="text" id="userId" placeholder="ID"></p>
+				<p><input type="password" id="userPwd" placeholder="Password"></p>
+				<p><input type="submit" value="login"></p>
+			</form>
+		</body>
+	</html>
+	`;
+	res.send(template);
 });
 
-app.listen(3000);*/
+app.post('/create', function (req, res) {
+	var received = req.body['arrayData[]'];
+	var result = [];
+	async function compareWords(){
+		for(var word of received){
+			await new Promise(function(resolve,reject){
+				var sql = `SELECT * FROM words WHERE word='${word}';`;
+				maria.query(sql, function(err, rows, fields){
+					if(err){
+						reject(err);
+						return;
+					}
+
+					if(rows.length === 0){
+						result.push(word);
+					}
+
+					resolve();
+				});
+			});
+		}
+		
+		console.log(result);
+	}
+
+	compareWords();
+});
+
+app.use( function (req, res, next) {
+	res.status(404).send('Not Found!');
+});
+
+app.use( function (err,req, res, next) {
+	console.error(err.stack);
+	res.status(500).send('Error!');
+});
+
+app.listen(8080, function () {
+	console.log('Express app listening on port 8080!');
+});

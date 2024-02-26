@@ -1,13 +1,18 @@
 Office.onReady(function() {
-  $("#create").on("click", extractWords);
-  var fileName = Office.context.document.url.split("\\").pop();
-  console.log(fileName.replace(".docx", ""));
+  $(document).ready(()=>{
+    
+    $("#create").on("click", extractWords);
+
+  })
 });
 
-function extractWords() {
-  Word.run(function(context) {
+async function extractWords() {
+  await Word.run(function(context) {
+    var fileName = Office.context.document.url.split("\\").pop();
+    console.log(fileName.replace(".docx", ""));
+
     var body = context.document.body;
-    context.load(body, "text");
+    body.load("text");
 
     return context.sync().then(function() {
       var wordsArray = body.text.match(/\b\w+\b/g);
@@ -23,7 +28,7 @@ function extractWords() {
       console.log(result);
 
       $.ajax({
-        url: "http://127.0.0.1:3000/",
+        url: "http://127.0.0.1:8080/create",
         type: "POST",
         data: { arrayData: result },
         success: function(response) {
@@ -33,6 +38,7 @@ function extractWords() {
           console.error(error);
         }
       });
+
     });
   }).catch(function(error) {
     console.log(error);
