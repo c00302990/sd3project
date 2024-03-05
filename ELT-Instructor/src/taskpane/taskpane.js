@@ -1,43 +1,52 @@
 Office.onReady(function() {
   $(document).ready(()=>{
-    
-    $("#create").on("click", extractWords);
-
+    $("#create").on("click", function(){
+      var numberOfQuestions = $("input[name=numberOfQuestions]").val();
+      if(numberOfQuestions > 0){
+        var dialog = document.getElementById("success");
+        extractWords(numberOfQuestions);
+        dialog.showModal();  
+      } else{
+        var dialog = document.getElementById("error");
+        dialog.showModal();
+      }
+      
+      for( var i = 0; i < document.getElementsByClassName("close").length; i++ ){
+				document.getElementsByClassName("close").item(i).addEventListener("click", function(){
+          dialog.close();
+        });
+			}
+      
+    });
   })
 });
 
-async function extractWords() {
+
+async function extractWords(numberOfQuestions) {
   await Word.run(function(context) {
-    var fileName = Office.context.document.url.split("\\").pop().replace(".docx", "");
+      var fileName = Office.context.document.url.split("\\").pop().replace(".docx", "");
+      var body = context.document.body;
+      body.load("text");
 
-    var body = context.document.body;
-    body.load("text");
+      return context.sync().then(function() {
+        var wordsArr = body.text.toLocaleLowerCase().match(/\b\w+\b/g);
+        var result = [];
 
-    return context.sync().then(function() {
-      var wordsArr = body.text.toLocaleLowerCase().split(/\s+/);
-      var filtered = [];
-      var specialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/;
-      wordsArr.forEach(function(element){
-      if (element[0] == "'" && element[element.length - 1] == "'"){
-      } else if (specialChar.test(element)){
-        element = element.replace(/[^a-z]/g, '');
-        if(element.length > 1 && element.match(/[a-z]/)){
-          filtered.push(element);
+        for (var word of wordsArr) {
+          if (word.match(/\D+/) && word.length > 1) {   
+            if(!result.includes(word)){
+              result.push(word);
+            } 
+         }
         }
-      } else{
-        if (element.length > 1 && element.match(/[a-z]/)){
-          filtered.push(element);
-        }
-      }
-    });
-
-    var uniqueArr = new Set(filtered);
-      console.log(uniqueArr);
-      
+         
+      console.log(result);
+            
+    
       $.ajax({
         url: "http://127.0.0.1:8080/create",
         type: "POST",
-        data: { arrayData: result, name: fileName },
+        data: { arrayData: result, name: fileName, questions: numberOfQuestions },
         success: function(response) {
           console.log("success");
         },
@@ -45,6 +54,7 @@ async function extractWords() {
           console.error(error);
         }
       });
+      
 
     });
   }).catch(function(error) {

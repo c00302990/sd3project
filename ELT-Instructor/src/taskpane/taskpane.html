@@ -6,22 +6,43 @@
 	</head>
 	
 	<body>
+
+
 		<H1>Quizzes</H1>
 		<main>
-	
 			<p>
+				<input type="number" name="numberOfQuestions" value = 0>
 				<button id="create">create</button>
 			</p>
 
 			<p>
 				<select>
-
+					<option >Select...</option>
 				</select>
 			</p>
 			<p>
 				<button id="view">view</button>&nbsp;&nbsp;<button id="delete">delete</button>
 			</p>
 			
+			
+
 		</main>
+
+		<dialog id="success">
+			<p>
+				SUCCESS!
+			</p>
+			<button class="close">close</button>
+		</dialog>
+
+
+		<dialog id="error">
+			<p>
+				CAN'T CREATE!
+			</p>
+			<button class="close">close</button>
+		</dialog>
+				
 	</body>
 </html>
+

@@ -9,5 +9,6 @@
 /ELT-Instructor/webpack.config.js
 
 /web_application/node_modules/
+/web_application/.env
 /web_application/package.json
 /web_application/package-lock.json

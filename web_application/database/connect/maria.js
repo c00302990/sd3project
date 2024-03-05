@@ -5,7 +5,7 @@ const conn = maria.createConnection({
     port: 3306,
     user: 'root',
     password: '1234',
-    database: 'test'
+    database: 'wordFrequency'
 });
 
 module.exports = conn;
