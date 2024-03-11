@@ -12,24 +12,8 @@ app.use(bodyParser.urlencoded({extended:false}));
 const helmet = require('helmet');
 app.use(helmet());
 
-// require('dotenv').config();
+require('dotenv').config();
 
-
-// const { OpenAI } = require("openai");
-// const openai = new OpenAI({
-// 	apiKey: process.env.OPENAI_API_KEY,
-// });
-
-// async function main() {
-//   const completion = await openai.chat.completions.create({
-//     messages: [{"role": "system", "content": "You are a helpful assistant."},],
-//     model: "gpt-3.5-turbo",
-//   });
-
-//   console.log(completion.choices[0]);
-// }
-
-// main();
 
 app.get('/', function (req, res) {
 	var template = 
@@ -51,11 +35,6 @@ app.get('/', function (req, res) {
 			<p><a href="">forget your id or password?</a></p>
 		</body>
 
-<!--	<script>
-			function moveToRegisterPage(){
-				
-			}
-		</script>	-->
 
 	</html>
 	`;
@@ -103,7 +82,7 @@ app.post('/create', function (req, res) {
 		var createSQL = `CREATE TABLE IF NOT EXISTS ${tableName} (
 			no INT AUTO_INCREMENT,
 			word VARCHAR(30),
-			used BIT,
+			used TINYINT(1),
 			PRIMARY KEY(no)
 			);`;
 
@@ -132,6 +111,25 @@ app.post('/create', function (req, res) {
 
 	compareWords();
 
+});
+
+
+app.get('/generate',function (req, res){
+	const { OpenAI } = require("openai");
+	const openai = new OpenAI({
+		apiKey: process.env.OPENAI_API_KEY,
+	});
+
+	async function main() {
+	const completion = await openai.chat.completions.create({
+		messages: [{"role": "system", "content": "You are a helpful assistant."},],
+		model: "gpt-3.5-turbo",
+	});
+
+	console.log(completion.choices[0]);
+	}
+
+	main();
 });
 
 app.use( function (req, res, next) {
