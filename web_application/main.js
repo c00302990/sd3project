@@ -6,7 +6,6 @@ const helmet = require('helmet');
 const bodyParser = require('body-parser');
 
 const maria = require('./database/connect/maria');
-maria.connect();
 
 require('dotenv').config();
 
@@ -22,43 +21,42 @@ const openai = new OpenAI({
 //   }));
 
 app.use(cors());
+app.use(express.json());
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(helmet());
 
 
+// async function compareWords(received, result){
+// 	for(var word of received){
+// 		await new Promise(function(resolve,reject){
+// 			maria.query(`SELECT * FROM words WHERE word='${word}';`, function(err, rows, fields){
+// 				if(rows.length > 0){
+// 					result.push(word);
+// 				}
+// 			});	
+// 			resolve();
+// 		});
+// 	}
+// }
+
 async function compareWords(received, result){
-	for(var word of received){
-		await new Promise(function(resolve,reject){
-			var sql = `SELECT * 
-						FROM words
-						WHERE word='${word}';`;
-		
-			maria.query(sql, function(err, rows, fields){
-				if(err){
-					reject(err);
-					return;
-				}
-
-				if(rows.length > 0){
-					result.push(word);
-				}
-
-				resolve();
-			});
-		});
-	}
+	await Promise.all(received.map(async (word) => {
+		const rows = await maria.promise().query(`SELECT * FROM words WHERE word='${word}';`);
+		if(rows.length > 0){
+			result.push(word);
+		}
+	}));
 }
+
 
 // async function insert(result, tableName){
 // 	for(var r of result){
 // 		await new Promise(function(resolve,reject){
-// 			var sql = `INSERT INTO ${tableName} (word, used) VALUES ('${r}', 0)`;
-// 			maria.query(sql, function(err, rows, fields){
+// 			maria.query(`INSERT INTO ${tableName} (word, used) VALUES ('${r}', 0);`, function(err, rows, fields){
 // 				if(err){
 // 					reject(err);
 // 					return;
 // 				}
-
 // 				resolve();
 // 			});
 // 		});
@@ -66,12 +64,15 @@ async function compareWords(received, result){
 // }
 
 
-function insert(result, tableName){
-	var sql = `INSERT INTO ${tableName} (word, used) VALUES (?, 0)`;
-	maria.query(sql, result, function(err, rows, fields){
-		console.error(err);
-	});
+
+function getRandom() {    
+	const randomIndex = Math.floor(Math.random() * weather.length);
+	return weather[randomIndex];
 }
+
+
+
+
 
 
 
@@ -113,28 +114,35 @@ app.post('/create', function (req, res, next) {
 	var numberOfQuestions = req.body['questions'];
 	var result = [];
 	
-
 	compareWords(received, result);
-
-	maria.changeUser({database:'wordlist'},function(err){
-		if(err){ console.error(err); }
-	});
+	console.log(result);
 	
-	var createSQL = `CREATE TABLE IF NOT EXISTS ${tableName} (
-		no INT AUTO_INCREMENT,
-		word VARCHAR(30),
-		used TINYINT(1),
-		PRIMARY KEY(no)
-		);`;
 
-	maria.query(createSQL, function(err, rows, fields){
-			insert(result, tableName);
-	});
+	// compareWords(received, result).then(function(){
+	// 	maria.changeUser({database:'wordlist'},function(err){
+	// 		if(err){ 
+	// 			console.error(err);
+	// 		}
+
+	// 		else{
+	// 			maria.query(`CREATE TABLE IF NOT EXISTS ${tableName} (
+	// 				no INT AUTO_INCREMENT,
+	// 				word VARCHAR(30),
+	// 				used TINYINT(1),
+	// 				PRIMARY KEY(no)
+	// 				);`, function(err, rows, fields){
+	// 					// insert(result, tableName);
+	// 					maria.query(`INSERT INTO ${tableName} (word, used) VALUES (?, 0);`, result);
+						
+	// 				});
+	// 		}
+	// 	});
+	// });
+
 	
 });
 
 app.get('/quizz', function (req, res, next) {
-	
 	
 });
 
@@ -143,7 +151,6 @@ app.get('/quizz', function (req, res, next) {
 
 app.get('/generate',function (req, res){
 	
-
 	async function main() {
 		const completion = await openai.chat.completions.create({
 			messages: [{"role": "system", "content": "You are a helpful assistant."},],

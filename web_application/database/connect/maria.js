@@ -1,4 +1,4 @@
-const maria = require('mysql');
+const maria = require('mysql2');
 
 const conn = maria.createConnection({
     host: 'localhost',
