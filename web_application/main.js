@@ -46,7 +46,8 @@ app.use(helmet());
 
 
 
-function getRandom() {    
+// pick random words
+function getRandom(result) {    
 	const randomIndex = Math.floor(Math.random() * result.length);
 	return result[randomIndex];
 }
@@ -119,13 +120,44 @@ app.post('/create', function (req, res, next) {
 	
 		}
 		
-		req.session.result = result;
 	}
 
-	compareWords(received,result);
-	console.log(req.session.result);
 	
-	res.redirect('/quizz');
+	compareWords(received,result).then(function (){
+		var wordslist = [];	
+		for(var i = 0; i<numberOfQuestions;i++){
+			wordslist.push(getRandom(result));
+		}
+
+		async function runGPT35(wordslist) {
+			const completion = await openai.chat.completions.create({
+				messages: [{"role": "system", "content": "You are an instructor who gives your students a vocabulary quiz."},
+						{"role": "user", "content": `Create a quiz asking questions about the meaning of '${wordslist[0]}'. There are four possible answers to choose from, and there is only one correct answer.`},],
+				model: "gpt-3.5-turbo-0125",
+			});
+
+			console.log(completion.choices[0]);
+		}
+
+		runGPT35(wordslist);
+
+	});
+	
+
+	
+	// async function main() {
+	// 	const completion = await openai.chat.completions.create({
+	// 		messages: [{"role": "system", "content": "You are an instructor who gives your students a vocabulary quiz."},],
+	// 		messages: [{"role": "user", "content": "Create a quiz asking questions about the meaning of 'compulsory'. There are four possible answers to choose from, and there is only one correct answer."},],
+	// 		model: "gpt-3.5-turbo",
+	// 	});
+
+	// 	console.log(completion.choices[0]);
+	// }
+
+	// main();
+	
+	
 	
 
 	// compareWords(received, result).then(function(){
@@ -159,22 +191,6 @@ app.get('/quizz', function (req, res, next) {
 });
 
 
-
-
-app.get('/generate',function (req, res){
-	
-	async function main() {
-		const completion = await openai.chat.completions.create({
-			messages: [{"role": "system", "content": "You are a helpful assistant."},],
-			messages: [{"role": "user", "content": "Create a quiz asking questions about the meaning of 'compulsory'. There are four possible answers to choose from, and there is only one correct answer."},],
-			model: "gpt-3.5-turbo",
-		});
-
-		console.log(completion.choices[0]);
-	}
-
-	main();
-});
 
 
 app.use( function (req, res, next) {
