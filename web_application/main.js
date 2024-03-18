@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-// const session = require('express-session');
+const session = require('express-session');
 const cors = require('cors');
 const helmet = require('helmet');
 const bodyParser = require('body-parser');
@@ -14,11 +14,11 @@ const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
 });
 
-// app.use(session({
-// 	secret: 'keyboard cat',
-// 	resave: false,
-// 	saveUninitialized: true,
-//   }));
+app.use(session({
+	secret: 'keyboard cat',
+	resave: false,
+	saveUninitialized: true,
+  }));
 
 app.use(cors());
 app.use(express.json());
@@ -26,27 +26,8 @@ app.use(bodyParser.urlencoded({extended:false}));
 app.use(helmet());
 
 
-// async function compareWords(received, result){
-// 	for(var word of received){
-// 		await new Promise(function(resolve,reject){
-// 			maria.query(`SELECT * FROM words WHERE word='${word}';`, function(err, rows, fields){
-// 				if(rows.length > 0){
-// 					result.push(word);
-// 				}
-// 			});	
-// 			resolve();
-// 		});
-// 	}
-// }
 
-async function compareWords(received, result){
-	await Promise.all(received.map(async (word) => {
-		const rows = await maria.promise().query(`SELECT * FROM words WHERE word='${word}';`);
-		if(rows.length > 0){
-			result.push(word);
-		}
-	}));
-}
+
 
 
 // async function insert(result, tableName){
@@ -66,8 +47,8 @@ async function compareWords(received, result){
 
 
 function getRandom() {    
-	const randomIndex = Math.floor(Math.random() * weather.length);
-	return weather[randomIndex];
+	const randomIndex = Math.floor(Math.random() * result.length);
+	return result[randomIndex];
 }
 
 
@@ -114,8 +95,37 @@ app.post('/create', function (req, res, next) {
 	var numberOfQuestions = req.body['questions'];
 	var result = [];
 	
-	compareWords(received, result);
-	console.log(result);
+
+	async function compareWords(received, result){
+		for(var word of received){
+			await new Promise(function(resolve,reject){
+				var sql = `SELECT * 
+							FROM words
+							WHERE word='${word}';`;
+	
+				maria.query(sql, function(err, rows, fields){
+					if(err){
+						reject(err);
+						return;
+					}
+	
+					if(rows.length > 0){
+						result.push(word);
+					}
+	
+					resolve();
+				});
+			});
+	
+		}
+		
+		req.session.result = result;
+	}
+
+	compareWords(received,result);
+	console.log(req.session.result);
+	
+	res.redirect('/quizz');
 	
 
 	// compareWords(received, result).then(function(){
@@ -143,7 +153,9 @@ app.post('/create', function (req, res, next) {
 });
 
 app.get('/quizz', function (req, res, next) {
-	
+	var test = req.session.result;
+	console.log(test);
+	res.send('test');
 });
 
 
