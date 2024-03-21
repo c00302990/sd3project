@@ -122,7 +122,27 @@ app.post('/create', function (req, res, next) {
 		}
 
 		runGPT35(wordslist).then(function(){
-			async function insert(result, quizQuestion){
+			maria.changeUser({database:'wordlist'},function(err){
+				if(err){ 
+					console.error(err);
+				}
+
+				else{
+					maria.query(`CREATE TABLE IF NOT EXISTS ${tableName} (
+						no INT AUTO_INCREMENT,
+						question VARCHAR(255),
+						optionA VARCHAR(255),
+						optionB VARCHAR(255),
+						optionC VARCHAR(255),
+						optionD VARCHAR(255),
+						correct VARCHAR(255),
+						);`);
+				}
+
+			});
+		}).then(function(){
+
+			async function insert(quizQuestion){
 				for(var e of quizQuestion){
 					await new Promise(function(resolve,reject){
 						maria.query(`INSERT INTO ${tableName} (word, used) VALUES ('${r}', 0);`, function(err, rows, fields){
@@ -135,10 +155,12 @@ app.post('/create', function (req, res, next) {
 					});
 				}		
 			}
+
+			insert();
+
 		});
 
-		insert();
-
+		
 	});
 	
 
@@ -189,7 +211,7 @@ app.get('/student/quizz', function (req, res, next) {
 				</select>
 			</p>
 			<p>
-				<button id="view">view</button>
+				<button id="start">Start</button>
 			</p>`;
 	
 	res.send(template);
