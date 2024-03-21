@@ -29,31 +29,11 @@ app.use(helmet());
 
 
 
-
-// async function insert(result, tableName){
-// 	for(var r of result){
-// 		await new Promise(function(resolve,reject){
-// 			maria.query(`INSERT INTO ${tableName} (word, used) VALUES ('${r}', 0);`, function(err, rows, fields){
-// 				if(err){
-// 					reject(err);
-// 					return;
-// 				}
-// 				resolve();
-// 			});
-// 		});
-// 	}		
-// }
-
-
-
 // pick random words
 function getRandom(result) {    
 	const randomIndex = Math.floor(Math.random() * result.length);
 	return result[randomIndex];
 }
-
-
-
 
 
 
@@ -95,6 +75,7 @@ app.post('/create', function (req, res, next) {
 	var tableName = req.body['name'];
 	var numberOfQuestions = req.body['questions'];
 	var result = [];
+	var quizQuestion = [];
 	
 
 	async function compareWords(received, result){
@@ -131,15 +112,32 @@ app.post('/create', function (req, res, next) {
 
 		async function runGPT35(wordslist) {
 			const completion = await openai.chat.completions.create({
-				messages: [{"role": "system", "content": "You are an instructor who gives your students a vocabulary quiz."},
-						{"role": "user", "content": `Create a quiz asking questions about the meaning of '${wordslist[0]}'. There are four possible answers to choose from, and there is only one correct answer.`},],
+				messages: [
+						{"role": "user", "content": `Create a question that ask the meaning of '${wordslist[0]}'. There are four possible answers to choose from, and there is only one correct answer.`},],
 				model: "gpt-3.5-turbo-0125",
 			});
 
-			console.log(completion.choices[0]);
+			quizQuestion = completion.choices[0].content.split("\n");
+			console.log(quizQuestion);
 		}
 
-		runGPT35(wordslist);
+		runGPT35(wordslist).then(function(){
+			async function insert(result, quizQuestion){
+				for(var e of quizQuestion){
+					await new Promise(function(resolve,reject){
+						maria.query(`INSERT INTO ${tableName} (word, used) VALUES ('${r}', 0);`, function(err, rows, fields){
+							if(err){
+								reject(err);
+								return;
+							}
+							resolve();
+						});
+					});
+				}		
+			}
+		});
+
+		insert();
 
 	});
 	
@@ -179,15 +177,22 @@ app.post('/create', function (req, res, next) {
 	// 				});
 	// 		}
 	// 	});
-	// });
-
-	
+	// });	
 });
 
-app.get('/quizz', function (req, res, next) {
-	var test = req.session.result;
-	console.log(test);
-	res.send('test');
+
+app.get('/student/quizz', function (req, res, next) {
+	var template = `
+			<p>
+				<select>
+					<option >Select...</option>
+				</select>
+			</p>
+			<p>
+				<button id="view">view</button>
+			</p>`;
+	
+	res.send(template);
 });
 
 
