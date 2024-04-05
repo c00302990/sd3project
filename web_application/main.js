@@ -25,7 +25,7 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(helmet());
 
-
+app.use(express.static('public'));
 
 
 
@@ -38,7 +38,7 @@ function getRandom(result) {
 
 
 
-app.get('/', function (req, res) {
+app.get('/', function (req,res,next) {
 	var template = 
 	`
 	<!DOCTYPE html>
@@ -70,7 +70,7 @@ app.get('/', function (req, res) {
 
 
 
-app.post('/create', function (req, res, next) {
+app.post('/create', function (req) {
 	var received = req.body['arrayData[]'];
 	var tableName = req.body['name'];
 	var numberOfQuestions = req.body['questions'];
@@ -85,7 +85,7 @@ app.post('/create', function (req, res, next) {
 							FROM words
 							WHERE word='${word}';`;
 	
-				maria.query(sql, function(err, rows, fields){
+				maria.query(sql, function(err, rows){
 					if(err){
 						reject(err);
 						return;
@@ -105,22 +105,71 @@ app.post('/create', function (req, res, next) {
 
 	
 	compareWords(received,result).then(function (){
-		var wordslist = [];	
-		for(var i = 0; i<numberOfQuestions;i++){
-			wordslist.push(getRandom(result));
-		}
+		// var wordslist = [];	
+		// for(var i = 0; i<numberOfQuestions;i++){
+		// 	wordslist.push(getRandom(result));
+		// }
 
 		async function runGPT35(wordslist) {
 			const completion = await openai.chat.completions.create({
 				messages: [
-						{"role": "user", "content": `Create a question that ask the meaning of '${wordslist[0]}'. There are four possible answers to choose from, and there is only one correct answer.`},],
+						{"role": "user", "content": `Create a question that ask the meaning of '${wordslist[0]}'. There are four possible answers to choose from, and there is only one correct answer.
+						At the end, show the correct answer of the question.`},],
 				model: "gpt-3.5-turbo-0125",
 			});
 
-			quizQuestion = completion.choices[0].content.split("\n");
+			console.log(completion.choices[0]);
+			console.log("\n");
+		
+			var result = completion.choices[0].message.content.split("\n");
+			console.log(result);
+			console.log("\n");
+			
+			result.filter((str) => {
+				if(str !== ""){
+					quizQuestion.push(str);
+				}
+			});
 			console.log(quizQuestion);
 		}
+/* for test */
+		function test(){
+			var wordlist = [];	
+			for(var i = 0; i<numberOfQuestions;i++){
+				wordlist.push(getRandom(result));
+			}
 
+			maria.changeUser({database:'wordlist'},function(err){
+				if(err){ 
+					console.error(err);
+				}
+
+				else{
+					maria.query(`CREATE TABLE IF NOT EXISTS ${tableName} (no INT AUTO_INCREMENT, question VARCHAR(255), optionA VARCHAR(255), optionB VARCHAR(255), primary key(no));`);
+
+						async function insert(wordlist){
+							await new Promise(function(resolve,reject){
+								maria.query(`INSERT INTO ${tableName} (question, optionA, optionB) VALUES (?, ?, ?);`, wordlist, function(err){
+									if(err){
+										reject(err);
+										return;
+									}
+									resolve();
+								});
+							});
+						}
+			
+						insert(wordlist);
+				}
+
+			});
+		
+
+			
+
+		}
+		test();
+/* ############################################################# */
 		runGPT35(wordslist).then(function(){
 			maria.changeUser({database:'wordlist'},function(err){
 				if(err){ 
@@ -143,20 +192,18 @@ app.post('/create', function (req, res, next) {
 		}).then(function(){
 
 			async function insert(quizQuestion){
-				for(var e of quizQuestion){
-					await new Promise(function(resolve,reject){
-						maria.query(`INSERT INTO ${tableName} (word, used) VALUES ('${r}', 0);`, function(err, rows, fields){
-							if(err){
-								reject(err);
-								return;
-							}
-							resolve();
-						});
+				await new Promise(function(resolve,reject){
+					maria.query(`INSERT INTO ${tableName} (question, optionA, optionB, optionC, optionD, correct) VALUES (?,?,?,?,?,?);`, quizQuestion, function(err){
+						if(err){
+							reject(err);
+							return;
+						}
+						resolve();
 					});
-				}		
+				});
 			}
 
-			insert();
+			insert(quizQuestion);
 
 		});
 
@@ -204,17 +251,88 @@ app.post('/create', function (req, res, next) {
 
 
 app.get('/student/quizz', function (req, res, next) {
-	var template = `
-			<p>
-				<select>
-					<option >Select...</option>
-				</select>
-			</p>
-			<p>
-				<button id="start">Start</button>
-			</p>`;
+
+	maria.changeUser({database:'wordlist'},function(err){
+		if(err){ 
+			console.error(err);
+		}
+
+		else{
+			maria.query('SHOW TABLES', function(err, result){
+				if (err) throw err;
+				var quizlist = [];
+				result.forEach(row => {
+					quizlist.push(row['Tables_in_wordlist']);
+				});
+
+				console.log(quizlist);
+
+				var option = `<option>Select...</option>`
+				quizlist.forEach((quiz) => {
+					option += `<option value="${quiz}">${quiz}</option>`
+				});
+				
+				var template = `
+							<form action="/student/quizz/start" method="post">
+								<p>
+									<select name="quiz">
+										${option}
+									</select>
+								</p>
+								<p>
+									<button>Start</button>
+								</p>
+							</form>	
+								`;
 	
-	res.send(template);
+				res.send(template);
+			});
+
+		}
+	});
+
+
+	
+});
+
+
+
+app.post("/student/quizz/start", function(req,res,next){
+	
+	
+	var template = `<div class="quiz-container" id="quiz">
+	<div class="quiz-header">
+	  <h2 class="header-txt">Technology Quiz</h2>
+	</div>
+	<div class="quiz-body">
+	  <h2 id="question">Question Text</h2>
+	  <ul>
+		<li>
+		  <input type="radio" name="answer" id="a" class="answer" />
+		  <label for="a" id="a_text"> Questions </label>
+		</li>
+		<li>
+		  <input type="radio" name="answer" id="b" class="answer" />
+		  <label for="b" id="b_text"> Questions </label>
+		</li>
+		<li>
+		  <input type="radio" name="answer" id="c" class="answer" />
+		  <label for="c" id="c_text"> Questions </label>
+		</li>
+		<li>
+		  <input type="radio" name="answer" id="d" class="answer" />
+		  <label for="d" id="d_text"> Questions </label>
+		</li>
+	  </ul>
+	</div>
+	<div class="quiz-footer">
+	  <div class="quiz-details"></div>
+	  <button type="button" id="btn">Submit</button>
+	</div>
+  </div>`
+	
+
+  	res.sendFile(__dirname + '/public/quiz.html');
 });
 
 
