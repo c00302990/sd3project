@@ -300,38 +300,18 @@ app.get('/student/quizz', function (req, res, next) {
 app.post("/student/quizz/start", function(req,res,next){
 	
 	
-	var template = `<div class="quiz-container" id="quiz">
-	<div class="quiz-header">
-	  <h2 class="header-txt">Technology Quiz</h2>
-	</div>
-	<div class="quiz-body">
-	  <h2 id="question">Question Text</h2>
-	  <ul>
-		<li>
-		  <input type="radio" name="answer" id="a" class="answer" />
-		  <label for="a" id="a_text"> Questions </label>
-		</li>
-		<li>
-		  <input type="radio" name="answer" id="b" class="answer" />
-		  <label for="b" id="b_text"> Questions </label>
-		</li>
-		<li>
-		  <input type="radio" name="answer" id="c" class="answer" />
-		  <label for="c" id="c_text"> Questions </label>
-		</li>
-		<li>
-		  <input type="radio" name="answer" id="d" class="answer" />
-		  <label for="d" id="d_text"> Questions </label>
-		</li>
-	  </ul>
-	</div>
-	<div class="quiz-footer">
-	  <div class="quiz-details"></div>
-	  <button type="button" id="btn">Submit</button>
-	</div>
-  </div>`
-	
+	var quiz = req.body.quiz;
+	console.log(quiz);
+	var json = {
+		question: "Where is the correct place to insert a JavaScript?",
+		a: "The <head> section",
+		b: "The <body> section",
+		c: "Both the <head> and the <body> section are correct",
+		d: "none of the above",
+		correct: "c",
+	  };
 
+	//res.json(json);
   	res.sendFile(__dirname + '/public/quiz.html');
 });
 
