@@ -7,6 +7,11 @@ const bodyParser = require('body-parser');
 
 const maria = require('./database/connect/maria');
 
+const ejs = require('ejs');
+
+app.set('view engine', 'ejs');
+app.set('views', './views');
+
 require('dotenv').config();
 
 const { OpenAI } = require("openai");
@@ -300,19 +305,64 @@ app.get('/student/quizz', function (req, res, next) {
 app.post("/student/quizz/start", function(req,res,next){
 	
 	
-	var quiz = req.body.quiz;
-	console.log(quiz);
-	var json = {
-		question: "Where is the correct place to insert a JavaScript?",
-		a: "The <head> section",
-		b: "The <body> section",
-		c: "Both the <head> and the <body> section are correct",
-		d: "none of the above",
-		correct: "c",
-	  };
+	// var quiz = req.body.quiz;
+	// console.log(quiz);
+	// var json = {
+	// 	question: "Where is the correct place to insert a JavaScript?",
+	// 	a: "The <head> section",
+	// 	b: "The <body> section",
+	// 	c: "Both the <head> and the <body> section are correct",
+	// 	d: "none of the above",
+	// 	correct: "c",
+	//   };
 
-	//res.json(json);
-  	res.sendFile(__dirname + '/public/quiz.html');
+	// res.json(json);
+  	// res.sendFile(__dirname + '/public/quiz.html',);
+
+	maria.changeUser({database:'wordlist'},function(err){
+		if(err){ 
+			console.error(err);
+		}
+
+		else{
+			
+			maria.query('SELECT * FROM test', function(err, result){
+				var test = [];
+				if (err) throw err;
+
+				result.forEach(result => {
+					var obj = {
+						question: result.question,
+						optionA: result.optionA,
+						optionB: result.optionB,
+						optionC: result.optionC,
+						optionD: result.optionD,
+					};
+					test.push(obj);
+					console.log(obj);
+					console.log(test);
+				});
+				
+
+				// for(var i=0; i<result.length; i++){
+				// 	var obj = {
+				// 		question: result[i].question,
+				// 		optionA: result[i].optionA,
+				// 		optionA: result[i].optionB,
+				// 		optionA: result[i].optionC,
+				// 		optionA: result[i].optionD,
+				// 	};
+
+				// 	test.push(obj[i]);
+				// }
+
+				res.render('quiz', {data: test});
+			});
+
+		}
+	});
+
+	
 });
 
 

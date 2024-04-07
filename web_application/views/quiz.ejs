@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	</head>
+	<body>
+        <% for (var i = 0; i < data.length; i++) { %>
+            <h2> <%= data[i].question %> </h2>
+            <ul>
+                <li>
+                    <input type="radio">
+                    <label> <%= data[i].optionA %> </label>
+                </li>
+                <li>
+                    <input type="radio">
+                    <label> <%= data[i].optionB %> </label>
+                </li>
+                <li>
+                    <input type="radio">
+                    <label> <%= data[i].optionC %> </label>
+                </li>
+                <li>
+                    <input type="radio">
+                    <label> <%= data[i].optionD %> </label>
+                </li>
+                
+            </ul>
+        <% } %>
+	</body>
+</html>
