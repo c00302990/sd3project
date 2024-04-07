@@ -1,29 +1,31 @@
 <!DOCTYPE html>
 <html>
 	<head>
+        <script src="/quiz.js"></script>
 	</head>
 	<body>
         <% for (var i = 0; i < data.length; i++) { %>
             <h2> <%= data[i].question %> </h2>
             <ul>
                 <li>
-                    <input type="radio">
-                    <label> <%= data[i].optionA %> </label>
+                    <input type="radio" value="<%= data[i].optionA %>">
+                    <%= data[i].optionA %>
                 </li>
                 <li>
                     <input type="radio">
-                    <label> <%= data[i].optionB %> </label>
+                    <%= data[i].optionB %>
                 </li>
                 <li>
                     <input type="radio">
-                    <label> <%= data[i].optionC %> </label>
+                    <%= data[i].optionC %>
                 </li>
                 <li>
                     <input type="radio">
-                    <label> <%= data[i].optionD %> </label>
+                    <%= data[i].optionD %>
                 </li>
-                
             </ul>
         <% } %>
+        <button id="test">submit</button>
+       
 	</body>
 </html>

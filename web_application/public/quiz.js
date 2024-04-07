@@ -1,4 +1,4 @@
-window.onload = function(){
+/*window.onload = function(){
 
 	fetch("/student/quizz/start").then(response => response.json())
 	.then(function(data){
@@ -131,4 +131,8 @@ window.onload = function(){
 
 	
 
+};*/
+
+window.onload = function(){
+	document.getElementById('test').addEventListener('click', function(){ alert("test!"); });
 };
