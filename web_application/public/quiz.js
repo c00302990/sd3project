@@ -134,5 +134,68 @@
 };*/
 
 window.onload = function(){
-	document.getElementById('test').addEventListener('click', function(){ alert("test!"); });
+	const quizDisplay = document.getElementById('quiz');
+	const submitBtn = document.getElementById('submit');
+	const resultDisplay = document.getElementById('result');
+
+	let numCorrect = 0;
+
+	function showResult(){
+		
+		const numberOfQuestions = document.getElementsByTagName('h2').length;
+		const options = ['a','b','c','d'];
+		var userAnswer = '';
+		var correct = '';
+
+		for(var i = 0; i < numberOfQuestions; i++){
+			userAnswer = document.querySelector(`input[name=answer${i+1}]:checked`).value;
+			correct = document.getElementsByName(`correct${i+1}`)[0].value;
+
+			if(userAnswer === correct){
+				numCorrect+=1;
+				for(element of options){
+					document.getElementsByTagName(`label[for="${element}_${i+1}"]`).style.color = 'lightgreen';
+					document.getElementById(`${element}_${i+1}`).disabled = true;
+				}
+				
+			} else{
+				for(element of options){
+					//document.querySelector(`label[for="${element}_${i+1}"]`).style.color = 'red';
+					document.getElementById(`${element}_${i+1}`).disabled = true;
+				}
+			}
+
+		}
+		
+		resultDisplay.innerHTML = `${numCorrect} out of ${numberOfQuestions}`;
+		document.getElementById('submit').disabled = true;
+	}
+		 
+	
+	// 	 
+	// 	 quizData.forEach( (currentQuestion, questionNum)=>{   
+	
+	
+	// 		const answerDisplay = answerDisplays[questionNum];
+	// 		const selector = `input[name=question${questionNum}]:checked`; 
+	// 		const userAnswer = (answerDisplay.querySelector(selector) || {}).value; 
+	
+	
+	// 					if(userAnswer === currentQuestion.correct){  
+	// 							numCorrect++;
+	// 							answerDisplays[questionNum].style.color = 'lightgreen';
+	// 					}else{
+	// 							answerDisplays[questionNum].style.color = 'red';
+	// 					}
+						
+	// 	   });
+		   
+		   
+		
+	// 	resultDisplay.innerHTML = `${numCorrect} out of ${quizData.length}`; 
+		   
+		   
+	// }
+	
+	submitBtn.addEventListener('click',showResult);
 };

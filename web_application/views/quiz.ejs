@@ -1,31 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 	<head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
         <script src="/quiz.js"></script>
+        <link rel="stylesheet" href="/quiz.css">
+        <title><%= title %></title>
 	</head>
 	<body>
-        <% for (var i = 0; i < data.length; i++) { %>
-            <h2> <%= data[i].question %> </h2>
-            <ul>
-                <li>
-                    <input type="radio" value="<%= data[i].optionA %>">
-                    <%= data[i].optionA %>
-                </li>
-                <li>
-                    <input type="radio">
-                    <%= data[i].optionB %>
-                </li>
-                <li>
-                    <input type="radio">
-                    <%= data[i].optionC %>
-                </li>
-                <li>
-                    <input type="radio">
-                    <%= data[i].optionD %>
-                </li>
-            </ul>
-        <% } %>
-        <button id="test">submit</button>
-       
+        <div id="quiz">
+            <% for (var i = 0; i < data.length; i++) { %>
+                <h2> <%= i+1 %>) <%= data[i].question %> </h2>
+
+                    <label for="a"><input type="radio" id="a_<%= i+1 %>" name="answer<%= i+1 %>" value="<%= data[i].optionA %>">
+                    <%= data[i].optionA %></label> <br>
+                
+                    <label for="b"><input type="radio" id="b_<%= i+1 %>" name="answer<%= i+1 %>" value="<%= data[i].optionB %>">
+                    <%= data[i].optionB %></label> <br>
+                
+                    <label for="c"><input type="radio" id="c_<%= i+1 %>" name="answer<%= i+1 %>" value="<%= data[i].optionC %>">
+                    <%= data[i].optionC %></label> <br>
+                
+                    <label for="d"><input type="radio" id="d_<%= i+1 %>" name="answer<%= i+1 %>" value="<%= data[i].optionD %>">
+                    <%= data[i].optionD %></label>
+
+                    <input type="hidden" name="correct<%= i+1 %>" value="<%= data[i].correct %>">
+        
+            <% } %>
+            
+        </div>
+        
+        <p> <button type="button" id="submit">Submit</button></p>
+        
+        <div id="result"> </div>
 	</body>
 </html>

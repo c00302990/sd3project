@@ -278,16 +278,24 @@ app.get('/student/quizz', function (req, res, next) {
 				});
 				
 				var template = `
-							<form action="/student/quizz/start" method="post">
-								<p>
-									<select name="quiz">
-										${option}
-									</select>
-								</p>
-								<p>
-									<button>Start</button>
-								</p>
-							</form>	
+							<!DOCTYPE html>
+							<html>
+								<head>
+									<title>Select Quiz</title>
+								</head>
+							<body>
+								<h2> Select Quiz </h2> <hr>
+								<form action="/student/quizz/start" method="post">
+									<p>
+										<select name="quiz">
+											${option}
+										</select>
+									</p>
+									<p>
+										<button>Start</button>
+									</p>
+								</form>
+							</body>	
 								`;
 	
 				res.send(template);
@@ -304,21 +312,6 @@ app.get('/student/quizz', function (req, res, next) {
 
 app.post("/student/quizz/start", function(req,res,next){
 	
-	
-	// var quiz = req.body.quiz;
-	// console.log(quiz);
-	// var json = {
-	// 	question: "Where is the correct place to insert a JavaScript?",
-	// 	a: "The <head> section",
-	// 	b: "The <body> section",
-	// 	c: "Both the <head> and the <body> section are correct",
-	// 	d: "none of the above",
-	// 	correct: "c",
-	//   };
-
-	// res.json(json);
-  	// res.sendFile(__dirname + '/public/quiz.html',);
-
 	maria.changeUser({database:'wordlist'},function(err){
 		if(err){ 
 			console.error(err);
@@ -327,36 +320,24 @@ app.post("/student/quizz/start", function(req,res,next){
 		else{
 			
 			maria.query('SELECT * FROM test', function(err, result){
-				var test = [];
+				
+				var quizQuestion = [];
+				
 				if (err) throw err;
 
 				result.forEach(result => {
-					var obj = {
+					var quizSet = {
 						question: result.question,
 						optionA: result.optionA,
 						optionB: result.optionB,
 						optionC: result.optionC,
 						optionD: result.optionD,
+						correct: result.correct
 					};
-					test.push(obj);
-					console.log(obj);
-					console.log(test);
+					quizQuestion.push(quizSet);
 				});
 				
-
-				// for(var i=0; i<result.length; i++){
-				// 	var obj = {
-				// 		question: result[i].question,
-				// 		optionA: result[i].optionA,
-				// 		optionA: result[i].optionB,
-				// 		optionA: result[i].optionC,
-				// 		optionA: result[i].optionD,
-				// 	};
-
-				// 	test.push(obj[i]);
-				// }
-
-				res.render('quiz', {data: test});
+				res.render('quiz', {title: req.body.quiz, data: quizQuestion,});
 			});
 
 		}
