@@ -55,7 +55,6 @@ async function extractWords(numberOfQuestions) {
         }
       });
       
-
     });
   }).catch(function(error) {
     console.log(error);
