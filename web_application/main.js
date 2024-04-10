@@ -81,6 +81,11 @@ app.post('/create', function (req) {
 	var result = [];
 	var quizQuestion = [];
 	
+	maria.changeUser({database:'wordFrequency'},function(err){
+		if(err){ 
+			console.error(err);
+		}
+	});
 
 	async function compareWords(received, result){
 		for(var word of received){
@@ -114,7 +119,7 @@ app.post('/create', function (req) {
 		var result = completion.choices[0].message.content.split("\n");
 		
 		result.filter((str) => {
-			if(str !== ""){
+			if(str.trim() !== ""){
 				quizQuestion.push(str);
 			}
 		});
@@ -157,8 +162,10 @@ app.post('/create', function (req) {
 							correct VARCHAR(255)
 							);`);
 					}).then(function(){
-						insert(quizQuestion);
-						quizQuestion = [];
+						maria.query(`DELETE FROM ${tableName};`,function(){
+							insert(quizQuestion);
+							quizQuestion = [];
+						});
 					});
 				}
 			}
