@@ -34,14 +34,6 @@ app.use(express.static('public'));
 
 
 
-// pick random words
-function getRandom(result) {    
-	const randomIndex = Math.floor(Math.random() * result.length);
-	return result[randomIndex];
-}
-
-
-
 app.get('/', function (req,res,next) {
 	var template = 
 	`
@@ -99,13 +91,16 @@ app.post('/create', function (req) {
 					}
 	
 					if(rows.length > 0){
-						result.push(word);
+						result.push({ rank:rows[0].rank, word:rows[0].word});
 					}
-	
+					
 					resolve();
 				});
 			});
+			
 		}
+		
+		result.sort((a,b) => b.rank - a.rank);
 	}
 
 	async function runGPT35(word) {
@@ -139,37 +134,41 @@ app.post('/create', function (req) {
 
 
 	compareWords(received,result).then(function (){
-		var wordlist = [];	
+
+		console.log(result);
+		var wordlist = [];
 		for(var i = 0; i<numberOfQuestions;i++){
-			wordlist.push(getRandom(result));
+			wordlist.push(result[i].word);
 		}
 
-		maria.changeUser({database:'quizlist'},function(err){
-			if(err){ 
-				console.error(err);
-			}
+		console.log(wordlist);
 
-			else{
-				for(word of wordlist){
-					runGPT35(word).then(function(){
-						maria.query(`CREATE TABLE IF NOT EXISTS ${tableName} (
-							no INT AUTO_INCREMENT PRIMARY KEY,
-							question VARCHAR(255),
-							optionA VARCHAR(255),
-							optionB VARCHAR(255),
-							optionC VARCHAR(255),
-							optionD VARCHAR(255),
-							correct VARCHAR(255)
-							);`);
-					}).then(function(){
-						maria.query(`DELETE FROM ${tableName};`,function(){
-							insert(quizQuestion);
-							quizQuestion = [];
-						});
-					});
-				}
-			}
-		});
+		// maria.changeUser({database:'quizlist'},function(err){
+		// 	if(err){ 
+		// 		console.error(err);
+		// 	}
+
+		// 	else{
+		// 		for(word of wordlist){
+		// 			runGPT35(word).then(function(){
+		// 				maria.query(`CREATE TABLE IF NOT EXISTS ${tableName} (
+		// 					no INT AUTO_INCREMENT PRIMARY KEY,
+		// 					question VARCHAR(255),
+		// 					optionA VARCHAR(255),
+		// 					optionB VARCHAR(255),
+		// 					optionC VARCHAR(255),
+		// 					optionD VARCHAR(255),
+		// 					correct VARCHAR(255)
+		// 					);`);
+		// 			}).then(function(){
+		// 				maria.query(`DELETE FROM ${tableName};`,function(){ //여기 수정할 것
+		// 					insert(quizQuestion);
+		// 					quizQuestion = [];
+		// 				});
+		// 			});
+		// 		}
+		// 	}
+		// });
 	
 	});
 });
