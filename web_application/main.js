@@ -143,32 +143,31 @@ app.post('/create', function (req) {
 
 		console.log(wordlist);
 
-		// maria.changeUser({database:'quizlist'},function(err){
-		// 	if(err){ 
-		// 		console.error(err);
-		// 	}
+		maria.changeUser({database:'quizlist'},function(err){
+			if(err){ 
+				console.error(err);
+			}
 
-		// 	else{
-		// 		for(word of wordlist){
-		// 			runGPT35(word).then(function(){
-		// 				maria.query(`CREATE TABLE IF NOT EXISTS ${tableName} (
-		// 					no INT AUTO_INCREMENT PRIMARY KEY,
-		// 					question VARCHAR(255),
-		// 					optionA VARCHAR(255),
-		// 					optionB VARCHAR(255),
-		// 					optionC VARCHAR(255),
-		// 					optionD VARCHAR(255),
-		// 					correct VARCHAR(255)
-		// 					);`);
-		// 			}).then(function(){
-		// 				maria.query(`DELETE FROM ${tableName};`,function(){ //여기 수정할 것
-		// 					insert(quizQuestion);
-		// 					quizQuestion = [];
-		// 				});
-		// 			});
-		// 		}
-		// 	}
-		// });
+			else{
+				maria.query(`DROP TABLE IF EXISTS ${tableName};`);
+				for(word of wordlist){
+					runGPT35(word).then(function(){
+						maria.query(`CREATE TABLE IF NOT EXISTS ${tableName} (
+							no INT AUTO_INCREMENT PRIMARY KEY,
+							question VARCHAR(255),
+							optionA VARCHAR(255),
+							optionB VARCHAR(255),
+							optionC VARCHAR(255),
+							optionD VARCHAR(255),
+							correct VARCHAR(255)
+							);`);
+					}).then(function(){
+						insert(quizQuestion);
+						quizQuestion = [];
+					});
+				}
+			}
+		});
 	
 	});
 });
