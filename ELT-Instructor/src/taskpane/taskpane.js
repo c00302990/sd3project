@@ -16,9 +16,44 @@ Office.onReady(function() {
           dialog.close();
         });
 			}
+
+    });
+
+    $("#reload").on("click", function(){
+      fetch('http://127.0.0.1:8080/quizlist')
+        .then(response => response.json())
+        .then(data => {
+          const quizList = document.getElementById('quizlist');
+          quizList.innerHTML = '';
+          data.forEach(table => {
+            const option = document.createElement('option');
+            option.textContent = table;
+            option.setAttribute('value',table);
+            quizList.appendChild(option);
+          });
+        })
+        .catch(error => console.error('Error:', error));
+    });
+  
+    $("#open").on("click", function(){
       
     });
-  })
+
+    $("#delete").on("click", function(){
+      $.ajax({
+        url: "http://127.0.0.1:8080/delete",
+        type: "post",
+        data: { delete: document.getElementById('quizlist').value },
+        success: function(response) {
+          console.log("success");
+        },
+        error: function(error) {
+          console.error(error);
+        }
+      });
+    });
+
+  });
 });
 
 
@@ -40,12 +75,9 @@ async function extractWords(numberOfQuestions) {
          }
         }
          
-      console.log(result);
-            
-    
       $.ajax({
         url: "http://127.0.0.1:8080/create",
-        type: "POST",
+        type: "post",
         data: { arrayData: result, name: fileName, questions: numberOfQuestions },
         success: function(response) {
           console.log("success");
@@ -55,6 +87,7 @@ async function extractWords(numberOfQuestions) {
         }
       });
       
+
     });
   }).catch(function(error) {
     console.log(error);

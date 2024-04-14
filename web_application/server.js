@@ -33,7 +33,6 @@ app.use(helmet());
 app.use(express.static('public'));
 
 
-
 app.get('/', function (req,res,next) {
 	var template = 
 	`
@@ -64,13 +63,12 @@ app.get('/', function (req,res,next) {
 
 
 
-
-
-app.post('/create', function (req) {
+app.post('/create', function (req, res, next) {
 	var received = req.body['arrayData[]'];
 	var tableName = req.body['name'];
 	var numberOfQuestions = req.body['questions'];
 	var result = [];
+	var exclude = [];
 	var quizQuestion = [];
 	
 	maria.changeUser({database:'wordFrequency'},function(err){
@@ -79,7 +77,7 @@ app.post('/create', function (req) {
 		}
 	});
 
-	async function compareWords(received, result){
+	async function compareWords(received, result, exclude){
 		for(var word of received){
 			await new Promise(function(resolve,reject){
 				var sql = `SELECT * FROM words WHERE word='${word}';`;
@@ -92,6 +90,8 @@ app.post('/create', function (req) {
 	
 					if(rows.length > 0){
 						result.push({ rank:rows[0].rank, word:rows[0].word});
+					} else{
+						exclude.push(word);
 					}
 					
 					resolve();
@@ -101,6 +101,7 @@ app.post('/create', function (req) {
 		}
 		
 		result.sort((a,b) => b.rank - a.rank);
+
 	}
 
 	async function runGPT35(word) {
@@ -133,15 +134,16 @@ app.post('/create', function (req) {
 	}
 
 
-	compareWords(received,result).then(function (){
+	
 
-		console.log(result);
+	compareWords(received,result,exclude).then(function (){
+
 		var wordlist = [];
 		for(var i = 0; i<numberOfQuestions;i++){
 			wordlist.push(result[i].word);
 		}
+		
 
-		console.log(wordlist);
 
 		maria.changeUser({database:'quizlist'},function(err){
 			if(err){ 
@@ -173,8 +175,43 @@ app.post('/create', function (req) {
 });
 
 
-app.get('/student/quizz', function (req, res, next) {
+app.get('/quizlist', async (req, res) => {
+	maria.changeUser({database:'quizlist'},function(err){
+		if(err){ 
+			console.error(err);
+		}
 
+		else{
+			maria.query('SHOW TABLES', function(err, rows){
+				if (err) throw err;
+				var quizlist = [];
+				rows.forEach(row => {
+					quizlist.push(row['Tables_in_quizlist']);
+				});
+
+				res.json(quizlist);
+			});
+		}
+	});
+});
+
+app.post('/delete', async (req, res) => {
+	var deleteQuiz = req.body['delete'];
+	maria.changeUser({database:'quizlist'},function(err){
+		if(err){ 
+			console.error(err);
+		}
+
+		else{
+			maria.query(`DROP TABLES ${deleteQuiz}`, function(err, rows){
+				if (err) throw err;
+			});
+		}
+	});
+});
+
+
+app.get('/student/quiz', function (req, res, next) {
 	maria.changeUser({database:'quizlist'},function(err){
 		if(err){ 
 			console.error(err);
