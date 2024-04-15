@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <script src="/quiz_instructor.js"></script>
+        <title><%= title %></title>
+	</head>
+	
+    <body>
+        <div id="quiz">
+            <form>
+                <% for (var i = 0; i < data.length; i++) { %>
+                    <p>
+                        <p> <input type="checkbox" value="<%= i %>"> <span><%= i+1 %>) <%= data[i].question %></span> </p>
+
+                            <label for="a_<%= i+1 %>"><input type="radio" id="a_<%= i+1 %>" name="answer<%= i+1 %>" value="<%= data[i].optionA %>">
+                            <%= data[i].optionA %></label> <br>
+                        
+                            <label for="b_<%= i+1 %>"><input type="radio" id="b_<%= i+1 %>" name="answer<%= i+1 %>" value="<%= data[i].optionB %>">
+                            <%= data[i].optionB %></label> <br>
+                        
+                            <label for="c_<%= i+1 %>"><input type="radio" id="c_<%= i+1 %>" name="answer<%= i+1 %>" value="<%= data[i].optionC %>">
+                            <%= data[i].optionC %></label> <br>
+                        
+                            <label for="d_<%= i+1 %>"><input type="radio" id="d_<%= i+1 %>" name="answer<%= i+1 %>" value="<%= data[i].optionD %>">
+                            <%= data[i].optionD %></label>
+
+                            <input type="hidden" name="correct<%= i+1 %>" value="<%= data[i].correct %>">
+                    </p>
+                <% } %>
+            </form>
+        </div>
+        
+        <p> <button type="button" id="delete">delete checked</button></p>
+        
+        <div id="result"> </div>
+	</body>
+</html>

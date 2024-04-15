@@ -61,6 +61,55 @@ app.get('/', function (req,res,next) {
 });
 
 
+async function compareWords(received, result, exclude){
+	for(var word of received){
+		await new Promise(function(resolve,reject){
+			var sql = `SELECT * FROM words WHERE word='${word}';`;
+
+			maria.query(sql, function(err, rows){
+				if(err){
+					reject(err);
+					return;
+				}
+
+				if(rows.length > 0){
+					result.push({ rank:rows[0].rank, word:rows[0].word});
+				} else{
+					exclude.push(word);
+				}
+				
+				resolve();
+			});
+		});
+		
+	}
+	
+	result.sort((a,b) => b.rank - a.rank);
+}
+
+
+
+app.post('/compare', async function (req,res,next){
+	var received = req.body['arrayData[]'];
+	var result = [];
+	var exclude = [];
+
+	maria.changeUser({database:'wordFrequency'},function(err){
+		if(err){ 
+			console.error(err);
+		} else{
+			compareWords(received,result,exclude).then(function(){
+				var data = {
+					result: result,
+					exclude: exclude
+				};
+				
+				res.json(data);
+			});
+		}
+	});
+
+});
 
 
 app.post('/create', function (req, res, next) {
@@ -77,32 +126,7 @@ app.post('/create', function (req, res, next) {
 		}
 	});
 
-	async function compareWords(received, result, exclude){
-		for(var word of received){
-			await new Promise(function(resolve,reject){
-				var sql = `SELECT * FROM words WHERE word='${word}';`;
 	
-				maria.query(sql, function(err, rows){
-					if(err){
-						reject(err);
-						return;
-					}
-	
-					if(rows.length > 0){
-						result.push({ rank:rows[0].rank, word:rows[0].word});
-					} else{
-						exclude.push(word);
-					}
-					
-					resolve();
-				});
-			});
-			
-		}
-		
-		result.sort((a,b) => b.rank - a.rank);
-
-	}
 
 	async function runGPT35(word) {
 		const completion = await openai.chat.completions.create({
@@ -143,7 +167,6 @@ app.post('/create', function (req, res, next) {
 			wordlist.push(result[i].word);
 		}
 		
-
 
 		maria.changeUser({database:'quizlist'},function(err){
 			if(err){ 
@@ -195,6 +218,7 @@ app.get('/quizlist', async (req, res) => {
 	});
 });
 
+
 app.post('/delete', async (req, res) => {
 	var deleteQuiz = req.body['delete'];
 	maria.changeUser({database:'quizlist'},function(err){
@@ -203,7 +227,7 @@ app.post('/delete', async (req, res) => {
 		}
 
 		else{
-			maria.query(`DROP TABLES ${deleteQuiz}`, function(err, rows){
+			maria.query(`DROP TABLES ${deleteQuiz};`, function(err, rows){
 				if (err) throw err;
 			});
 		}
@@ -238,7 +262,7 @@ app.get('/student/quiz', function (req, res, next) {
 								</head>
 							<body>
 								<h2> Select Quiz </h2> <hr>
-								<form action="/student/quizz/start" method="post">
+								<form action="/student/quiz/start" method="post">
 									<p>
 										<select name="quiz">
 											${option}
@@ -262,8 +286,7 @@ app.get('/student/quiz', function (req, res, next) {
 });
 
 
-
-app.post("/student/quizz/start", function(req,res,next){
+app.post("/student/quiz/start", function(req,res,next){
 	
 	maria.changeUser({database:'quizlist'},function(err){
 		if(err){ 
@@ -272,7 +295,7 @@ app.post("/student/quizz/start", function(req,res,next){
 
 		else{
 			
-			maria.query('SELECT * FROM test', function(err, result){
+			maria.query(`SELECT * FROM ${req.body['quiz']};`, function(err, result){
 				
 				var quizQuestion = [];
 				
@@ -299,6 +322,39 @@ app.post("/student/quizz/start", function(req,res,next){
 });
 
 
+app.get('/quiz/:quizName', function(req,res,next){
+
+	maria.changeUser({database:'quizlist'},function(err){
+		if(err){ 
+			console.error(err);
+		}
+
+		else{
+			
+			maria.query(`SELECT * FROM ${req.params.quizName};`, function(err, result){
+				
+				var quizQuestion = [];
+				
+				if (err) throw err;
+
+				result.forEach(result => {
+					var quizSet = {
+						question: (result.question.includes(": "))?result.question.split(": ")[1]:result.question.split(": ")[0],
+						optionA: result.optionA,
+						optionB: result.optionB,
+						optionC: result.optionC,
+						optionD: result.optionD,
+						correct: (result.correct.includes(": "))?result.correct.split(": ")[1]:result.correct.split(": ")[0]
+					};
+					quizQuestion.push(quizSet);
+				});
+				
+				res.render('quiz_instructor', {title: req.body.quiz, data: quizQuestion,});
+			});
+
+		}
+	});
+});
 
 app.use( function (req, res, next) {
 	res.status(404).send('Not Found!');

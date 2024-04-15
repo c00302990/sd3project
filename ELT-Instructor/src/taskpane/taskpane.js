@@ -3,9 +3,11 @@ Office.onReady(function() {
     $("#create").on("click", function(){
       var numberOfQuestions = $("input[name=numberOfQuestions]").val();
       if(numberOfQuestions > 0){
+
         var dialog = document.getElementById("success");
         extractWords(numberOfQuestions);
-        dialog.showModal();  
+        dialog.showModal(); 
+
       } else{
         var dialog = document.getElementById("error");
         dialog.showModal();
@@ -36,7 +38,8 @@ Office.onReady(function() {
     });
   
     $("#open").on("click", function(){
-      
+      const openQuiz = document.getElementById('quizlist').value;
+      window.open('http://127.0.0.1:8080/quiz/'+openQuiz, '_blank');
     });
 
     $("#delete").on("click", function(){
@@ -52,7 +55,6 @@ Office.onReady(function() {
         }
       });
     });
-
   });
 });
 
@@ -74,7 +76,8 @@ async function extractWords(numberOfQuestions) {
             } 
          }
         }
-         
+      
+        
       $.ajax({
         url: "http://127.0.0.1:8080/create",
         type: "post",
