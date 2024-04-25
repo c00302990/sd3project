@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+	<html>
+		<head>
+			<meta name="viewport" content="width=device-width, initial-scale=1">
+			<meta charset="utf-8">
+			<title>Registration</title>
+			<script src="/js/registration.js"></script>
+		</head>
+	
+		<body>
+			<form action="" method="post">
+				<table>
+					<tr>
+						<th scope="col">ID</th>
+						<td><input type="text" id="userId" placeholder="ID"></td>
+					</tr>
+					<tr>
+						<th scope="col">Password</th>
+						<td><input type="password" id="userPwd" placeholder="Password"></td>
+					</tr>
+					<tr>
+						<th scope="col">Email</th>
+						<td><input type="email" id="userEmail" placeholder="Email"></td>
+					</tr>
+					<tr>
+						<th scope="col">University</th>
+						<td><input type="text" id="university" placeholder="University"></td>
+					</tr>
+					<tr>
+						<th scope="col">Student ID</th>
+						<td><input type="text" id="studentID" placeholder="Student ID"></td>
+					</tr>
+					<tr>
+						<th scope="col">Academic year</th>
+						<td>
+							<select id="year">
+								<option value="1">1</option>
+								<option value="2">2</option>
+								<option value="3">3</option>
+								<option value="4">4</option>
+							</select>
+						</td>
+					</tr>
+				</table>
+				<input type="submit" value="registration">
+			</form>
+
+			<button type="button" id="cancel">cancel</button>
+		</body>
+
+	</html>

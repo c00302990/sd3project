@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Select Quiz</title>
+        <link rel="stylesheet" href="/css/selectQuiz.css">
+    </head>
+
+    <body>
+        <h2> Select Quiz </h2> <hr>
+        <form action="/student/quiz/start" method="post">
+            <p>
+                <select name="quizList">
+                    <option value="none">Select</option>
+                    <% for (var i = 0; i < optionList.length; i++) { %>
+                        <option value="<%= optionList[i] %>"><%= optionList[i] %></option>
+                    <% } %>
+                </select>
+                <button>Start</button>
+            </p>
+        </form>
+    </body>	
+</html>

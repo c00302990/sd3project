@@ -22,7 +22,7 @@ Office.onReady(function() {
     });
 
     $("#reload").on("click", function(){
-      fetch('http://127.0.0.1:8080/quizlist')
+      fetch('https://sd3project.nw.r.appspot.com/quizlist')
         .then(response => response.json())
         .then(data => {
           const quizList = document.getElementById('quizlist');
@@ -39,14 +39,15 @@ Office.onReady(function() {
   
     $("#open").on("click", function(){
       const openQuiz = document.getElementById('quizlist').value;
-      window.open('http://127.0.0.1:8080/quiz/'+openQuiz, '_blank');
+      window.open('https://sd3project.nw.r.appspot.com/quiz/'+openQuiz, '_blank');
     });
 
     $("#delete").on("click", function(){
       $.ajax({
-        url: "http://127.0.0.1:8080/delete",
+        url: "https://sd3project.nw.r.appspot.com/delete",
         type: "post",
-        data: { delete: document.getElementById('quizlist').value },
+        data: JSON.stringify({ delete: document.getElementById('quizlist').value }),
+        contentType: "application/json",
         success: function(response) {
           console.log("success");
         },
@@ -77,20 +78,25 @@ async function extractWords(numberOfQuestions) {
          }
         }
       
-        
-      $.ajax({
-        url: "http://127.0.0.1:8080/create",
-        type: "post",
-        data: { arrayData: result, name: fileName, questions: numberOfQuestions },
-        success: function(response) {
-          console.log("success");
-        },
-        error: function(error) {
-          console.error(error);
-        }
-      });
-      
 
+      fetch('https://sd3project.nw.r.appspot.com/create', {
+        mode: 'no-cors',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': 'https://localhost:3000/'
+        },
+        body: JSON.stringify({ arrayData: result, name: fileName, questions: numberOfQuestions })
+      })
+      .then(response => {
+        if (response.ok) {
+          console.log('success');
+        } else {
+          console.error('failed');
+        }
+      })
+      .catch(error => console.error(error));
+    
     });
   }).catch(function(error) {
     console.log(error);

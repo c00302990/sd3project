@@ -3,7 +3,8 @@
 	<head>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta charset="utf-8">
-        <script src="/quiz_instructor.js"></script>
+        <script src="/js/quiz_instructor.js"></script>
+        <script src="/js/jquery.js"></script>
         <title><%= title %></title>
 	</head>
 	
@@ -12,7 +13,7 @@
             <form>
                 <% for (var i = 0; i < data.length; i++) { %>
                     <p>
-                        <p> <input type="checkbox" value="<%= i %>"> <span><%= i+1 %>) <%= data[i].question %></span> </p>
+                        <p> <input type="checkbox" value="<%= data[i].checkboxVal %>"> <span><%= i+1 %>) <%= data[i].question %></span> </p>
 
                             <label for="a_<%= i+1 %>"><input type="radio" id="a_<%= i+1 %>" name="answer<%= i+1 %>" value="<%= data[i].optionA %>">
                             <%= data[i].optionA %></label> <br>
@@ -30,10 +31,26 @@
                     </p>
                 <% } %>
             </form>
+        </div><hr>
+
+        <div id="usedWords">
+            <span>Used Words list</span>
+            <ul>
+                <% for (var i = 0; i < usedWords.length; i++) { %>
+                    <li><%= usedWords[i] %></li> 
+                <% } %>
+            </ul>
         </div>
+        <hr>
+        <p> <span> Clicking the button will delete the selected questions from the server database. </span> <button type="button" id="delete">delete checked</button></p>
         
-        <p> <button type="button" id="delete">delete checked</button></p>
-        
-        <div id="result"> </div>
+        <div>
+            <span>If you want to add a word, enter it below and press the Add button.</span><br>
+            <input type="text" id="addWord"> <button type="button" id="add">Add</button> <br><br>
+            <span>* List to add *</span>
+            <ul id="wordList">
+            </ul>
+            <button type="button" id="create">Create quiz question with added words</button>
+        </div>
 	</body>
 </html>

@@ -1,119 +1,41 @@
 const express = require('express');
 const app = express();
-const session = require('express-session');
-const cors = require('cors');
-const helmet = require('helmet');
-const bodyParser = require('body-parser');
+app.use(express.json());
 
-const maria = require('./database/connect/maria');
+const cors = require('cors');
+app.use(cors());
+
+const helmet = require('helmet');
+app.use(helmet());
+
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({extended:false}));
+app.use(bodyParser.json());
+
+const path = require('path');
+app.use(express.static('public'));
 
 const ejs = require('ejs');
-
 app.set('view engine', 'ejs');
 app.set('views', './views');
 
-require('dotenv').config();
+const maria = require('./database/connect/maria');
 
-const { OpenAI } = require("openai");
-const openai = new OpenAI({
-	apiKey: process.env.OPENAI_API_KEY,
-});
-
-app.use(session({
-	secret: 'keyboard cat',
-	resave: false,
-	saveUninitialized: true,
-  }));
-
-app.use(cors());
-app.use(express.json());
-app.use(bodyParser.urlencoded({extended:false}));
-app.use(helmet());
-
-app.use(express.static('public'));
+const functions = require('./functions');
 
 
 app.get('/', function (req,res,next) {
-	var template = 
-	`
-	<!DOCTYPE html>
-	<html>
-		<head>
-			<title>Welcome!</title>
-			
-		</head>
-	
-		<body>
-			<form action="" method="post">
-				<p><input type="text" id="userId" placeholder="ID"></p>
-				<p><input type="password" id="userPwd" placeholder="Password"></p>
-				<input type="submit" value="login">
-			</form>
-			<button onclick="moveToRegisterPage()">register</button>
-			<p><a href="">forget your id or password?</a></p>
-		</body>
-
-
-	</html>
-	`;
-
-	res.send(template);
+	res.sendFile(path.join(__dirname, '/public/html/index.html'));
 });
 
 
-async function compareWords(received, result, exclude){
-	for(var word of received){
-		await new Promise(function(resolve,reject){
-			var sql = `SELECT * FROM words WHERE word='${word}';`;
-
-			maria.query(sql, function(err, rows){
-				if(err){
-					reject(err);
-					return;
-				}
-
-				if(rows.length > 0){
-					result.push({ rank:rows[0].rank, word:rows[0].word});
-				} else{
-					exclude.push(word);
-				}
-				
-				resolve();
-			});
-		});
-		
-	}
-	
-	result.sort((a,b) => b.rank - a.rank);
-}
-
-
-
-app.post('/compare', async function (req,res,next){
-	var received = req.body['arrayData[]'];
-	var result = [];
-	var exclude = [];
-
-	maria.changeUser({database:'wordFrequency'},function(err){
-		if(err){ 
-			console.error(err);
-		} else{
-			compareWords(received,result,exclude).then(function(){
-				var data = {
-					result: result,
-					exclude: exclude
-				};
-				
-				res.json(data);
-			});
-		}
-	});
-
+app.get('/registration', function (req,res,next) {
+	res.sendFile(path.join(__dirname, '/public/html/registration.html'));
 });
 
 
 app.post('/create', function (req, res, next) {
-	var received = req.body['arrayData[]'];
+	var received = req.body['arrayData'];
 	var tableName = req.body['name'];
 	var numberOfQuestions = req.body['questions'];
 	var result = [];
@@ -126,48 +48,12 @@ app.post('/create', function (req, res, next) {
 		}
 	});
 
-	
-
-	async function runGPT35(word) {
-		const completion = await openai.chat.completions.create({
-			messages: [
-					{"role": "user", "content": `Create a question that ask the meaning of '${word}'. There are four possible answers to choose from, and there is only one correct answer.
-					At the end, show the correct answer of the question.`},],
-			model: "gpt-3.5-turbo-0125",
-		});
-	
-		var result = completion.choices[0].message.content.split("\n");
-		
-		result.filter((str) => {
-			if(str.trim() !== ""){
-				quizQuestion.push(str);
-			}
-		});
-	}
-
-	async function insert(quizQuestion){
-		await new Promise(function(resolve,reject){
-			maria.query(`INSERT INTO ${tableName} (question, optionA, optionB, optionC, optionD, correct) VALUES (?,?,?,?,?,?);`, quizQuestion, function(err){
-				if(err){
-					reject(err);
-					return;
-				}
-				resolve();
-			});
-		});
-	}
-
-
-	
-
-	compareWords(received,result,exclude).then(function (){
-
+	functions.compareWords(received,result,exclude).then(function (){
 		var wordlist = [];
 		for(var i = 0; i<numberOfQuestions;i++){
 			wordlist.push(result[i].word);
 		}
 		
-
 		maria.changeUser({database:'quizlist'},function(err){
 			if(err){ 
 				console.error(err);
@@ -176,7 +62,7 @@ app.post('/create', function (req, res, next) {
 			else{
 				maria.query(`DROP TABLE IF EXISTS ${tableName};`);
 				for(word of wordlist){
-					runGPT35(word).then(function(){
+					functions.runGPT35(word, quizQuestion).then(function(){
 						maria.query(`CREATE TABLE IF NOT EXISTS ${tableName} (
 							no INT AUTO_INCREMENT PRIMARY KEY,
 							question VARCHAR(255),
@@ -187,18 +73,16 @@ app.post('/create', function (req, res, next) {
 							correct VARCHAR(255)
 							);`);
 					}).then(function(){
-						insert(quizQuestion);
-						quizQuestion = [];
+						functions.insert(quizQuestion, tableName);
 					});
 				}
 			}
 		});
-	
 	});
 });
 
 
-app.get('/quizlist', async (req, res) => {
+app.get('/quizlist', async function(req, res, next){
 	maria.changeUser({database:'quizlist'},function(err){
 		if(err){ 
 			console.error(err);
@@ -219,8 +103,8 @@ app.get('/quizlist', async (req, res) => {
 });
 
 
-app.post('/delete', async (req, res) => {
-	var deleteQuiz = req.body['delete'];
+app.post('/delete', async function(req, res, next){
+	var deleteQuiz = req.body.delete;
 	maria.changeUser({database:'quizlist'},function(err){
 		if(err){ 
 			console.error(err);
@@ -248,55 +132,22 @@ app.get('/student/quiz', function (req, res, next) {
 				result.forEach(row => {
 					quizlist.push(row['Tables_in_quizlist']);
 				});
-
-				var option = `<option>Select...</option>`
-				quizlist.forEach((quiz) => {
-					option += `<option value="${quiz}">${quiz}</option>`
-				});
 				
-				var template = `
-							<!DOCTYPE html>
-							<html>
-								<head>
-									<title>Select Quiz</title>
-								</head>
-							<body>
-								<h2> Select Quiz </h2> <hr>
-								<form action="/student/quiz/start" method="post">
-									<p>
-										<select name="quiz">
-											${option}
-										</select>
-									</p>
-									<p>
-										<button>Start</button>
-									</p>
-								</form>
-							</body>	
-								`;
-	
-				res.send(template);
+				res.render('selectQuiz', { optionList: quizlist});
 			});
-
 		}
 	});
-
-
-	
 });
 
 
 app.post("/student/quiz/start", function(req,res,next){
-	
 	maria.changeUser({database:'quizlist'},function(err){
 		if(err){ 
 			console.error(err);
 		}
 
 		else{
-			
-			maria.query(`SELECT * FROM ${req.body['quiz']};`, function(err, result){
-				
+			maria.query(`SELECT * FROM ${req.body['quizList']};`, function(err, result){
 				var quizQuestion = [];
 				
 				if (err) throw err;
@@ -315,46 +166,88 @@ app.post("/student/quiz/start", function(req,res,next){
 				
 				res.render('quiz', {title: req.body.quiz, data: quizQuestion,});
 			});
-
 		}
 	});
-	
 });
 
 
 app.get('/quiz/:quizName', function(req,res,next){
-
 	maria.changeUser({database:'quizlist'},function(err){
 		if(err){ 
 			console.error(err);
 		}
 
 		else{
-			
 			maria.query(`SELECT * FROM ${req.params.quizName};`, function(err, result){
 				
 				var quizQuestion = [];
+				var usedWords = [];
 				
 				if (err) throw err;
 
+				var pattern =/"([^"]*)"|'([^']*)'/g;
+
 				result.forEach(result => {
+					var usedWord = result.question.match(pattern)[0];
+					usedWords.push(usedWord.substring(1,usedWord.length-1));
+
 					var quizSet = {
 						question: (result.question.includes(": "))?result.question.split(": ")[1]:result.question.split(": ")[0],
 						optionA: result.optionA,
 						optionB: result.optionB,
 						optionC: result.optionC,
 						optionD: result.optionD,
-						correct: (result.correct.includes(": "))?result.correct.split(": ")[1]:result.correct.split(": ")[0]
+						correct: (result.correct.includes(": "))?result.correct.split(": ")[1]:result.correct.split(": ")[0],
+						checkboxVal: result.no
 					};
 					quizQuestion.push(quizSet);
+					
 				});
 				
-				res.render('quiz_instructor', {title: req.body.quiz, data: quizQuestion,});
+				res.render('quiz_instructor', {title: req.params.quizName+' - instructor page', data: quizQuestion, usedWords: usedWords});
 			});
-
 		}
 	});
 });
+
+
+app.post('/quiz/deleteQuestions', async function (req, res, next){
+	var targetQuiz = req.body.quizName;
+	var deleteQuestions = req.body.targetWords;
+	maria.changeUser({database:'quizlist'},function(err){
+		if(err){ 
+			console.error(err);
+		}
+
+		else{
+			for(var i=0; i<deleteQuestions.length; i++){
+				maria.query(`DELETE FROM ${targetQuiz} WHERE no = '${deleteQuestions[i]}';`, function(err, rows){
+					if (err) throw err;
+				});
+			}
+		}
+	});
+});
+
+
+app.post('/quiz/createQuestions', async function (req, res, next){
+	var targetQuiz = req.body.quizName;
+	var createQuestions = req.body.addedWords;
+	var quizQuestion = [];
+
+	maria.changeUser({database:'quizlist'},async function(err){
+		if(err){ 
+			console.error(err);
+		}
+
+		else{
+            for (var word of createQuestions) {
+				functions.runGPT35(word, quizQuestion).then(function(){ functions.insert(quizQuestion, targetQuiz);});
+            }
+		}
+	});
+});
+
 
 app.use( function (req, res, next) {
 	res.status(404).send('Not Found!');
@@ -365,6 +258,4 @@ app.use( function (err,req, res, next) {
 	res.status(500).send('Error!');
 });
 
-app.listen(8080, function () {
-	console.log('Express app listening on port 8080!');
-});
+app.listen(process.env.PORT, function () {});
